@@ -2,16 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import './App.css';
 
 function App() {
-    // useState to manage form data values
-    const [formData, setFormData] = useState({
-        user_name: '',
-        user_email: '',
-        message: ''
-    });
+    // Form input states
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [message, setMessage] = useState('');
     
-    // useState to manage form status and loading state
-    const [formStatus, setFormStatus] = useState({ message: '', type: '' });
+    // UI states
     const [isLoading, setIsLoading] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
     const [errors, setErrors] = useState({});
     const form = useRef();
 
@@ -36,55 +34,53 @@ function App() {
         return () => observer.disconnect();
     }, []);
 
-    // onChange event handler to manage form input changes
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prevData => ({
-            ...prevData,
-            [name]: value
-        }));
-        
-        // Clear error when user starts typing
-        if (errors[name]) {
-            setErrors(prevErrors => ({
-                ...prevErrors,
-                [name]: ''
-            }));
-        }
+    // Individual input handlers
+    const handleNameChange = (e) => {
+        setName(e.target.value);
+        if (errors.name) setErrors({ ...errors, name: '' });
     };
 
-    // Form validation function
+    const handleEmailChange = (e) => {
+        setEmail(e.target.value);
+        if (errors.email) setErrors({ ...errors, email: '' });
+    };
+
+    const handleMessageChange = (e) => {
+        setMessage(e.target.value);
+        if (errors.message) setErrors({ ...errors, message: '' });
+    };
+
+    // Simple form validation
     const validateForm = () => {
         const newErrors = {};
         
-        if (!formData.user_name.trim()) {
-            newErrors.user_name = 'Name is required';
-        } else if (formData.user_name.trim().length < 2) {
-            newErrors.user_name = 'Name must be at least 2 characters';
+        if (!name.trim()) {
+            newErrors.name = 'Name is required';
+        } else if (name.trim().length < 2) {
+            newErrors.name = 'Name must be at least 2 characters';
         }
         
-        if (!formData.user_email.trim()) {
-            newErrors.user_email = 'Email is required';
-        } else if (!/\S+@\S+\.\S+/.test(formData.user_email)) {
-            newErrors.user_email = 'Please enter a valid email';
+        if (!email.trim()) {
+            newErrors.email = 'Email is required';
+        } else if (!/\S+@\S+\.\S+/.test(email)) {
+            newErrors.email = 'Please enter a valid email';
         }
         
-        if (!formData.message.trim()) {
+        if (!message.trim()) {
             newErrors.message = 'Message is required';
-        } else if (formData.message.trim().length < 10) {
+        } else if (message.trim().length < 10) {
             newErrors.message = 'Message must be at least 10 characters';
         }
         
         return newErrors;
     };
 
-    // onClick/onSubmit event handler
+    // Form submission handler
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        // Validate form before submission
+        // Check for errors
         const newErrors = validateForm();
-        
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             return;
@@ -94,46 +90,38 @@ function App() {
         setErrors({});
 
         try {
-            // Simulate email sending - replace with actual email service if needed
+            // Simulate sending email
             await new Promise(resolve => setTimeout(resolve, 2000));
             
-            console.log('Form submitted with data:', formData);
-
-            setFormStatus({
-                message: `Thank you ${formData.user_name}! Message sent successfully! I'll get back to you soon.`,
-                type: 'success'
-            });
+            console.log('Form data:', { name, email, message });
             
-            // Reset form data
-            setFormData({
-                user_name: '',
-                user_email: '',
-                message: ''
-            });
+            // Show success message
+            setSuccessMessage(`Thank you ${name}! Your message has been sent successfully!`);
+            
+            // Clear form
+            setName('');
+            setEmail('');
+            setMessage('');
             
         } catch (error) {
-            setFormStatus({
-                message: 'Failed to send message. Please try again.',
-                type: 'error'
-            });
-            console.error('Email sending failed:', error);
+            console.error('Failed to send:', error);
+            setErrors({ submit: 'Failed to send message. Please try again.' });
         } finally {
             setIsLoading(false);
-            setTimeout(() => {
-                setFormStatus({ message: '', type: '' });
-            }, 5000);
+            // Hide success message after 5 seconds
+            if (successMessage) {
+                setTimeout(() => setSuccessMessage(''), 5000);
+            }
         }
     };
 
-    // onClick event handler for reset button
+    // Clear form handler
     const handleReset = () => {
-        setFormData({
-            user_name: '',
-            user_email: '',
-            message: ''
-        });
+        setName('');
+        setEmail('');
+        setMessage('');
         setErrors({});
-        setFormStatus({ message: '', type: '' });
+        setSuccessMessage('');
     };
 
     return (
@@ -182,32 +170,29 @@ function App() {
                     <div className="form-group">
                         <input 
                             type="text" 
-                            name="user_name" 
-                            value={formData.user_name}
-                            onChange={handleChange}
+                            value={name}
+                            onChange={handleNameChange}
                             required 
                             placeholder="Your Name"
-                            className={errors.user_name ? 'error' : ''}
+                            className={errors.name ? 'error' : ''}
                         />
-                        {errors.user_name && <span className="error-text">{errors.user_name}</span>}
+                        {errors.name && <span className="error-text">{errors.name}</span>}
                     </div>
                     <div className="form-group">
                         <input 
                             type="email" 
-                            name="user_email" 
-                            value={formData.user_email}
-                            onChange={handleChange}
+                            value={email}
+                            onChange={handleEmailChange}
                             required 
                             placeholder="Your Email"
-                            className={errors.user_email ? 'error' : ''}
+                            className={errors.email ? 'error' : ''}
                         />
-                        {errors.user_email && <span className="error-text">{errors.user_email}</span>}
+                        {errors.email && <span className="error-text">{errors.email}</span>}
                     </div>
                     <div className="form-group">
                         <textarea 
-                            name="message" 
-                            value={formData.message}
-                            onChange={handleChange}
+                            value={message}
+                            onChange={handleMessageChange}
                             required 
                             placeholder="Your Message" 
                             rows="5"
@@ -216,9 +201,15 @@ function App() {
                         {errors.message && <span className="error-text">{errors.message}</span>}
                     </div>
 
-                    {formStatus.message && (
-                        <div className={`form-status ${formStatus.type}`}>
-                            {formStatus.message}
+                    {successMessage && (
+                        <div className="form-status success">
+                            {successMessage}
+                        </div>
+                    )}
+                    
+                    {errors.submit && (
+                        <div className="form-status error">
+                            {errors.submit}
                         </div>
                     )}
 
